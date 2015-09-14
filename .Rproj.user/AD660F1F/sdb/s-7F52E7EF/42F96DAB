@@ -1,0 +1,18 @@
+{
+    "contents" : "# =============================================================================\n# distr.Velocity(...) generates a bimodal gaussian distribution intended to\n# simulate retail product velocity behavior online in terms of customer interest\n# behavior. Examples are \"Adding to Bag\", \"Purchasing\". The idea is that there \n# is a period of activity early in teh day which can be modelled by a smaller\n# gaussian distribution whereas activity tapers off and picks up to maximum\n# later in the day.\n\n# distr.Velocity(...) takes in the following parameters:\n# 'size'\n# 'inv.mean'\n# 'time.interval' in minutes\n\n# distr.Velocity(...) returns:\n#\n# =============================================================================\n\ndistr.Velocity <- function(day.size, inv.mean){\n  # ASSUMPTION: Inventory is stocked to meet at least 10% shopping vel\n  ## Create smaller, larger distributions for day, probability of each, then\n  ## put them together\n  d1 <- rnorm(day.size, mean=inv.mean*0.05, sd=inv.mean*0.01)\n  d2 <- rnorm(day.size, mean=inv.mean*0.1, sd=inv.mean*0.01)\n  flag <- rbinom(day.size, size=1, prob=0.3)\n  \n  day.vel <- d1*flag + d2*(1-flag)\n  dens.day.vel <- hist(day.vel, breaks=day.size, plot=F)[[3]]\n  dens.day.vel <- round(dens.day.vel*10^8*runif(length(dens.day.vel)))\n  ### sort out the values less than lowest by using a uniform dist.\n  dens.day.vel[dens.day.vel<=range(dens.day.vel)[1]] <- \n    round(runif(sum(dens.day.vel<=range(dens.day.vel)[1]), \n                min = range(dens.day.vel)[1]*2,\n                max = range(dens.day.vel)[2]/2))\n  \n  return(dens.day.vel) \n  #ATB Velocity distribution for a day (any number of intervals in minutes)\n  \n}",
+    "created" : 1442187302325.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "827249173",
+    "id" : "42F96DAB",
+    "lastKnownWriteTime" : 1442198731,
+    "path" : "~/MCOMPPI/source/distributeVelocity.R",
+    "project_path" : "source/distributeVelocity.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
