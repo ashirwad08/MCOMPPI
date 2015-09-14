@@ -90,8 +90,37 @@ simData <- function(size, inv.mean, time.interval){
   # ----------------------------------------------------------------------------
   dat.smooth <- dat.smooth %>% mutate(ATB.momentum = inv.avail*ATB.velocity, 
                                       sell.momentum = inv.avail*sell.velocity, 
-                                      conv.momentum = sell.momentum/ATB.momentum)
+                                      conv.proportion = sell.momentum/ATB.momentum,
+                                      conv.momentum = abs(ATB.momentum-sell.momentum))
+  # ----------------------------------------------------------------------------
+  dat.smooth <- 
+  # PREDICTION AND SIGNIFICANCE!!!!!!!!
+  # ----------------------------------------------------------------------------
+  # At each record, fit an AR(1) ARIMA model to the lagging a time interval's 
+  # worth of lagging conv.momentum values.
+  # Use predict on this model to get the PREDICTED MOMENTUM
+  # Once done, indicate whether or not the prediction is SIGNIFICANT
   
-  
+  # Tinker with ARIMA interval here.
+  ## Can we predict based on 30 mins worth of data? (assuming interval's less
+  ## than an hour)
+  dat.smooth[dat.smooth$conv.momentum==0,'conv.momentum'] <- sample(dat.smooth$inv.avail, size=length(dat.smooth[dat.smooth$conv.momentum==0,'conv.momentum']))
+  dat.smooth$pred.conv.momentum <- 0
+  dat.smooth$isSignif <- 0
+  time.size <- floor(30/time.interval)
+  lwr = 1
+  for(i in 1:nrow(dat.smooth)){
+      upr <- lwr+time.size
+      fit <- lm(conv.momentum~seq, data = dat.smooth[lwr:upr, ])
+      if(summary(fit)$coef[2,4] <= 0.1 & !is.nan(summary(fit)$coef[2,4])){
+        # Mark as significant if momentum significantly related to time interval
+        # Used less than 90% confidence interval... TWEAK THIS!
+        dat.smooth$isSignif[upr+1] <- 1
+      }
+      #dat.smooth$pred.conv.momentum <- predict(fit, newdata=dat.smooth[upr+1,])
+      dat.smooth$pred.conv.momentum[upr+1] <- 
+        coef(fit)[[1]]+coef(fit)[[2]]*dat.smooth$seq[upr]
+      lwr <- upr
+  }
   
 }
